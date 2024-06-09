@@ -22,12 +22,13 @@ class Game {
         frame.setSize(Constants.width, Constants.height);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        frame.addKeyListener(panel); // Add the KeyListener to the frame
     }
 
     public void start() {
-        panel.run();
+        Thread gameThread = new Thread(panel); // Run the game loop in a separate thread
+        gameThread.start();
     }
-
 }
 
 class Brick {
@@ -44,7 +45,7 @@ class Brick {
 
     public void draw(Graphics g) {
         if (!destroyed) {
-            g.setColor(Color.BLACK);
+            g.setColor(Color.gray);
             g.fillRect(x, y, width, height);
         }
     }
@@ -141,8 +142,15 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
         ball = new Ball(150, 200, 20);
         paddle = new Paddle(150, 450, 100, 20);
         bricks = new Brick[30];
+
+        // Initialize bricks with some positions and sizes
+        for (int i = 0; i < bricks.length; i++) {
+            bricks[i] = new Brick(50 + (i % 10) * 70, 50 + (i / 10) * 30, 60, 20);
+        }
+
         addKeyListener(this);
         setFocusable(true);
+        setBackground(Color.BLACK);
     }
 
     @Override
@@ -156,7 +164,6 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
         }
     }
 
@@ -175,6 +182,15 @@ class GamePanel extends JPanel implements Runnable, KeyListener {
         if (ballRect.intersects(paddleRect)) {
             // Collision detected, reverse the ball's y-direction
             ball.reverseYDirection();
+        }
+
+        // Check for collision between ball and bricks
+        for (Brick brick : bricks) {
+            if (!brick.isDestroyed() && ballRect.intersects(brick.getBounds())) {
+                brick.setDestroyed(true);
+                ball.reverseYDirection();
+                break;
+            }
         }
     }
 
